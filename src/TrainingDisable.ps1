@@ -76,7 +76,8 @@ $LogFileExempt = "$LogFileBasePath\LockoutUsers_EXEMPT_$Date.log"
 #========================================================================================================================
 
 # Create a function that pulls the usernames who are training noncompliant from the WebTraining DB
-function WAM-SQLLookup{
+function Invoke-WamSqlQuery {
+    [Alias('WAM-SQLLookup')]
     # Create a new SQL Connection to the server and the Webstraining DB
     $SQLConnection=New-Object System.Data.SqlClient.SqlConnection
     $SQLConnection.ConnectionString='Server=XXXXX\XXXXX;Database=WebTraining;Integrated Security=True'
@@ -187,7 +188,8 @@ function Write-LogEXEMPT {
 #========================================================================================================================
 
 # Function to perform disable action on user account and set AD description.
-function WAM-Disable{
+function Disable-WhatAboutMe {
+    [Alias('WAM-Disable')]
     param([Parameter(Mandatory=$True)][string]$Identity)
         
         # Checks to see if script is set to only generate a report.  $ReportOnly -eq $True will generate all log files, but will NOT disable accounts.
@@ -248,7 +250,9 @@ function WAM-Disable{
 }
 
 # Function to check list of non-compliant users for exemptions and then disable remaining in AD.
-function WAM-ADSearch{
+function Assert-WhatAboutMePolicy {
+    [Alias('WAM-ADSearch')]
+    param()
     # Imports the username list created from function: WAM-SQLLookup
     $LockOutList = Get-Content -Path $LockOutListFile
 
@@ -345,28 +349,20 @@ function WAM-ADSearch{
 #========================================================================================================================
 #                                                    Sequentialization                                                  #
 #========================================================================================================================
-
-function Start-Main {
-    # Write 'BEGIN' line for script logs.
-    Write-Log -Data "********************BEGIN - WAM Training Non-Compliance Lockout - ALL********************"
-    Write-LogVIP -Data "********************BEGIN - WAM Training Non-Compliance Lockout - VIP********************"
-    Write-LogEXEMPT -Data "********************BEGIN - WAM Training Non-Compliance Lockout - EXEMPT********************"
-
-    # Call function to generate list of non-compliant users.
-    WAM-SQLLookup
-
-    # Call function to check exemptions and disable accounts.
-    WAM-ADSearch
-
-    # Write 'END' line for script logs.
-    Write-Log -Data "********************END - WAM Training Non-Compliance Lockout - ALL********************"
-    Write-LogVIP -Data "********************END - WAM Training Non-Compliance Lockout - VIP********************"
-    Write-LogEXEMPT -Data "********************END - WAM Training Non-Compliance Lockout - EXEMPT********************"
-}
-
-#========================================================================================================================
-#                                                     Initialization                                                    #
-#========================================================================================================================
-
 # Start the Script
-Start-Main
+
+# Write 'BEGIN' line for script logs.
+Write-Log -Data "********************BEGIN - WAM Training Non-Compliance Lockout - ALL********************"
+Write-LogVIP -Data "********************BEGIN - WAM Training Non-Compliance Lockout - VIP********************"
+Write-LogEXEMPT -Data "********************BEGIN - WAM Training Non-Compliance Lockout - EXEMPT********************"
+
+# Call function to generate list of non-compliant users.
+WAM-SQLLookup
+
+# Call function to check exemptions and disable accounts.
+WAM-ADSearch
+
+# Write 'END' line for script logs.
+Write-Log -Data "********************END - WAM Training Non-Compliance Lockout - ALL********************"
+Write-LogVIP -Data "********************END - WAM Training Non-Compliance Lockout - VIP********************"
+Write-LogEXEMPT -Data "********************END - WAM Training Non-Compliance Lockout - EXEMPT********************"
