@@ -5,8 +5,6 @@
 # objects (not files; the v1 Out-File-as-IPC handoff is retired). The
 # orchestrator may optionally write a v1-shaped LockoutList_<date>.txt
 # audit artifact for downstream consumers that grep it directly.
-#
-# At PR 3 this is a stub. PR 5 fills in the body.
 # =============================================================================
 
 function Get-WamNonCompliantUser {
@@ -105,7 +103,88 @@ function Get-WamNonCompliantUser {
         [string] $ConfigPath
     )
 
-    throw [System.NotImplementedException]::new(
-        'Get-WamNonCompliantUser will be implemented in PR 5 (I/O wrappers).'
-    )
+    # -------------------------------------------------------------------------
+    # Resolve configuration.
+    # -------------------------------------------------------------------------
+    # We pass only the parameters the user actually supplied to the
+    # override layer; bound but null/empty parameters would otherwise
+    # win over the lower layers and overwrite the shipped defaults with
+    # garbage. PSBoundParameters carries exactly the set of parameters
+    # the caller specified (ignoring those left at default) -- which is
+    # the contract Resolve-WamConfiguration expects.
+    # -------------------------------------------------------------------------
+    $sqlOverrides = @{}
+    if ($PSBoundParameters.ContainsKey('ConnectionString')) {
+        $sqlOverrides['ConnectionString'] = $ConnectionString
+    }
+    if ($PSBoundParameters.ContainsKey('StoredProcedure')) {
+        $sqlOverrides['StoredProcedure'] = $StoredProcedure
+    }
+    if ($PSBoundParameters.ContainsKey('UsernameColumn')) {
+        $sqlOverrides['UsernameColumn'] = $UsernameColumn
+    }
+
+    $parameterOverrides = @{}
+    if ($sqlOverrides.Count -gt 0) {
+        $parameterOverrides['Sql'] = $sqlOverrides
+    }
+
+    $resolveArgs = @{
+        ParameterOverrides = $parameterOverrides
+    }
+    if ($PSBoundParameters.ContainsKey('ConfigPath')) {
+        $resolveArgs['ConfigPath'] = $ConfigPath
+    }
+    $config = Resolve-WamConfiguration @resolveArgs
+
+    # -------------------------------------------------------------------------
+    # Hand off to the SQL seam.
+    # -------------------------------------------------------------------------
+    # Invoke-WamSqlStoredProcedure is the Private/* helper that owns the
+    # ADO.NET connection lifecycle. Splitting it out gives us one place
+    # to mock for tests (rather than reaching into System.Data.SqlClient
+    # from every test that exercises this function) and keeps the
+    # try/finally in one location.
+    # -------------------------------------------------------------------------
+    $dataTable = Invoke-WamSqlStoredProcedure `
+        -ConnectionString $config.Sql.ConnectionString `
+        -StoredProcedure $config.Sql.StoredProcedure `
+        -CommandTimeoutSeconds $config.Sql.CommandTimeoutSeconds
+
+    if ($null -eq $dataTable) {
+        return
+    }
+
+    # -------------------------------------------------------------------------
+    # Project DataRows to [pscustomobject] one row at a time.
+    # -------------------------------------------------------------------------
+    # v1 truncated to the first row via "Select-Object -Index 0", which
+    # is defect 12 -- the prod scheduled task has been processing one
+    # user per night for months. We enumerate every row.
+    #
+    # The DOMAIN\ prefix strip is preserved verbatim from v1: split on
+    # the first backslash, take everything after it. If the column
+    # value has no backslash (already-stripped, or the procedure is
+    # configured to return bare SamAccountNames in a future schema
+    # change), we surface it unchanged.
+    # -------------------------------------------------------------------------
+    $usernameColumn = $config.Sql.UsernameColumn
+    foreach ($row in $dataTable.Rows) {
+        # We index the row with [string] cast so a column whose runtime
+        # type is [DBNull] surfaces as the empty string rather than as
+        # the string '$null', which would otherwise contaminate the
+        # downstream pipeline.
+        $rawValue = [string] $row[$usernameColumn]
+        $backslashIndex = $rawValue.IndexOf('\')
+        $samAccountName = if ($backslashIndex -ge 0) {
+            $rawValue.Substring($backslashIndex + 1)
+        }
+        else {
+            $rawValue
+        }
+
+        [pscustomobject] @{
+            SamAccountName = $samAccountName
+        }
+    }
 }

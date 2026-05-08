@@ -97,7 +97,7 @@ Describe 'Resolve-WamConfiguration' {
             $projectConfigPath = Join-Path -Path $TestDrive -ChildPath 'proj.psd1'
             Set-Content -Path $projectConfigPath -Value '@{ Policy = @{ GracePeriodDays = 7 } }' -Encoding utf8
 
-            InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock -Parameters @{
+            InModuleScope -ModuleName 'WamTrainingDisable' -Parameters @{
                 ProjectConfigPath = $projectConfigPath
             } {
                 param($ProjectConfigPath)
@@ -111,7 +111,7 @@ Describe 'Resolve-WamConfiguration' {
         It 'missing -ConfigPath throws' {
             $missingPath = Join-Path -Path $TestDrive -ChildPath "does-not-exist-$([guid]::NewGuid()).psd1"
 
-            InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock -Parameters @{
+            InModuleScope -ModuleName 'WamTrainingDisable' -Parameters @{
                 MissingPath = $missingPath
             } {
                 param($MissingPath)
@@ -320,7 +320,7 @@ Describe 'Resolve-WamConfiguration' {
             $projectConfigPath = Join-Path -Path $TestDrive -ChildPath 'proj-multi.psd1'
             Set-Content -Path $projectConfigPath -Value '@{ Sql = @{ ConnectionString = "project-conn" } }' -Encoding utf8
 
-            InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock -Parameters @{
+            InModuleScope -ModuleName 'WamTrainingDisable' -Parameters @{
                 ProjectConfigPath = $projectConfigPath
             } {
                 param($ProjectConfigPath)
