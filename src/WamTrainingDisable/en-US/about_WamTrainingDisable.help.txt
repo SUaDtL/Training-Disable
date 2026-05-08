@@ -1,0 +1,120 @@
+TOPIC
+    about_WamTrainingDisable
+
+SHORT DESCRIPTION
+    Disables Active Directory user accounts for users delinquent on the
+    "What About Me" (WAM) training, with configurable exemptions and a
+    three-channel log output.
+
+LONG DESCRIPTION
+    The WamTrainingDisable module is the v2 modernization of a single-file
+    PowerShell automation (src/TrainingDisable.ps1) the maintainer wrote
+    for an enterprise scheduled task. The script pulls a list of
+    non-compliant users from a SQL stored procedure, looks each up in
+    Active Directory, applies a configurable exemption matrix (grace
+    period for new hires, OU exemptions, group exemptions), and disables
+    the account where appropriate.
+
+    The module deliberately preserves v1's observable behavior. The
+    drop-in shim (src/TrainingDisable.ps1, after PR 7) calls into this
+    module and produces the same files at the same paths so the prod
+    scheduled task does not need to change.
+
+
+PIPELINE
+    Invoke-WamTrainingDisable orchestrates the run. It calls:
+
+      1. Get-WamNonCompliantUser  -- the SQL stage. Returns a list of
+                                     username records.
+      2. Get-WamUserDetail        -- internal AD wrapper. Returns one
+                                     user record per username, with
+                                     resolved group display names.
+      3. Test-WamUserExemption    -- pure decision function. Returns an
+                                     IsExempt / Reason / Channels record
+                                     per user.
+      4. Disable-WamUserAccount   -- AD-write stage. Disables the user
+                                     and appends a description note.
+                                     Skipped under -WhatIf.
+      5. Write-WamLog             -- internal multi-channel logger.
+                                     Emits a line on each channel the
+                                     decision returned.
+
+
+CONFIGURATION
+    Resolution order (highest precedence first):
+
+      1. Cmdlet parameters
+      2. Environment variables (WAM_SQL_CONNECTION, WAM_LOG_DIR, ...)
+      3. User config:
+          $env:LOCALAPPDATA\WamTrainingDisable\config.psd1   (Windows)
+          $HOME/.config/WamTrainingDisable/config.psd1       (Linux)
+      4. -ConfigPath parameter (an explicit project file)
+      5. Shipped defaults (WamTrainingDisable.config.psd1 next to the
+         manifest)
+
+    Use Get-WamConfiguration to inspect what the next run would see.
+    Use Get-WamConfiguration -ShowSource to see WHICH layer each value
+    came from.
+
+
+LOG CHANNELS
+    The module emits up to three log files per run:
+
+      - LockoutUsers_All_<date>.log     -- the main activity log; every
+                                           user touched gets a line.
+      - LockoutUsers_VIP_<date>.log     -- the VIP team's feed; emitted
+                                           when a user's DN matches the
+                                           configured VIP DN pattern.
+      - LockoutUsers_EXEMPT_<date>.log  -- audit trail of exemptions;
+                                           emitted when IsExempt = $true.
+
+    The VIP log is a downstream contract (per ADR 0006). It is consumed
+    as-is by the VIP support team's own tooling; do NOT change the path
+    or line shape without coordinating with them.
+
+
+GRACE PERIOD
+    Users whose AD whenCreated is within Policy.GracePeriodDays (default
+    30) of the run date are exempt. The threshold is computed from the
+    AD record, not from any HR system; if the AD account was created
+    after the user joined, the grace period clock starts at the AD
+    create time, not the hire date.
+
+
+REPORT-ONLY MODE
+    Pass -WhatIf to Invoke-WamTrainingDisable to skip the
+    Disable-ADAccount and Set-ADUser calls. Log files are still written
+    so the operator gets a complete report of what would have happened.
+
+    This is the v2 replacement for v1's $ReportOnly = $true flag. The
+    drop-in shim translates the v1 flag into -WhatIf so existing
+    config keeps working.
+
+
+COMMANDS
+    Public:
+
+      Invoke-WamTrainingDisable     The orchestrator. The cmdlet the
+                                    prod scheduled task calls.
+      Get-WamNonCompliantUser       The SQL stage; returns objects.
+      Test-WamUserExemption         Pure exemption-decision function.
+      Disable-WamUserAccount        Disables one user; takes
+                                    -WhatIf and -Confirm.
+      Get-WamConfiguration          Inspect the resolved configuration.
+
+    Private (not exported; visible internally only):
+
+      Write-WamLog
+      Get-WamUserDetail
+      Resolve-WamConfiguration
+      Invoke-WamSqlStoredProcedure
+      ConvertTo-WamLogLine
+
+
+SEE ALSO
+    Get-Help Invoke-WamTrainingDisable -Full
+    Get-Help Test-WamUserExemption -Full
+    Get-Help Disable-WamUserAccount -Full
+
+    Project repository:
+      https://github.com/SUaDtL/Training-Disable
