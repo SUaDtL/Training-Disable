@@ -200,12 +200,21 @@ Describe 'Write-WamLog' {
             # This test validates that Add-WamLogContent receives a path with
             # the date correctly expanded.
             #
-            # We match with a regex that accepts either separator at the
-            # join because Join-Path uses the platform-native separator
-            # ('/' on Linux, '\' on Windows) when combining the directory
-            # template (which contains forward slashes) with the file name.
-            # The date being a real path component -- not just a substring
-            # of the file name -- is what this test cares about.
+            # We normalize backslashes to forward slashes before comparing
+            # because Join-Path on Windows rewrites the entire path with
+            # backslashes -- even when the input was a forward-slash POSIX
+            # path. A Windows pwsh runner produces:
+            #
+            #   \tmp\wam-test\Script_Output\WAM\20260508\LockoutUsers_All_...
+            #
+            # while Linux pwsh produces:
+            #
+            #   /tmp/wam-test/Script_Output/WAM/20260508/LockoutUsers_All_...
+            #
+            # The substantive thing this test asserts is that 20260508 is a
+            # real directory component (not just a substring of the file
+            # name -- the next It block covers that). Normalizing the path
+            # captures that without the platform-separator brittleness.
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 Write-WamLog `
                     -Message 'msg' `
@@ -213,7 +222,7 @@ Describe 'Write-WamLog' {
                     -LoggingConfig $script:DefaultLoggingConfig `
                     -WorkingDate $script:WorkingDate
                 Should -Invoke -CommandName Add-WamLogContent -Times 1 -ParameterFilter {
-                    $Path -match '/tmp/wam-test/Script_Output/WAM/20260508[\\/]'
+                    ($Path -replace '\\', '/') -like '*/Script_Output/WAM/20260508/*'
                 }
             }
         }
