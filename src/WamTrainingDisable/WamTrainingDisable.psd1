@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # WamTrainingDisable.psd1 -- Module manifest for the v2 module
 # =============================================================================
 #
@@ -43,9 +43,9 @@
     # new GUID; renaming alone is not enough to disambiguate in PSGallery.
     GUID = '1449f16d-a0fc-43ee-b9a0-f928d17e6215'
 
-    Author      = 'SUaDtL'
+    Author = 'SUaDtL'
     CompanyName = 'Unknown'
-    Copyright   = '(c) 2024-2026 SUaDtL. All rights reserved.'
+    Copyright = '(c) 2024-2026 SUaDtL. All rights reserved.'
 
     Description = @'
 Disables Active Directory user accounts for users delinquent on the
@@ -65,7 +65,7 @@ scheduled task; environment-specific to the maintainer's organization.
     # editions must work; the analyzer's PSUseCompatibleSyntax/Cmdlets rules
     # enforce this at lint time.
 
-    PowerShellVersion    = '5.1'
+    PowerShellVersion = '5.1'
     CompatiblePSEditions = @('Desktop', 'Core')
 
     # -------------------------------------------------------------------------
@@ -96,9 +96,9 @@ scheduled task; environment-specific to the maintainer's organization.
         'Get-WamConfiguration'
     )
 
-    CmdletsToExport   = @()
+    CmdletsToExport = @()
     VariablesToExport = @()
-    AliasesToExport   = @()
+    AliasesToExport = @()
 
     # -------------------------------------------------------------------------
     # File manifest.

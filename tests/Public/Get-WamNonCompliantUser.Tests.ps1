@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # tests/Public/Get-WamNonCompliantUser.Tests.ps1 -- WAM Training Disable
 # =============================================================================
 #
@@ -68,7 +68,7 @@ BeforeAll {
             $null = $table.Rows.Add($r)
         }
 
-        return ,$table
+        return , $table
     }
 }
 
@@ -334,7 +334,7 @@ Describe 'Get-WamNonCompliantUser' {
                 $null = $table.Rows.Add([System.DBNull]::Value)
 
                 Mock -CommandName Invoke-WamSqlStoredProcedure -MockWith {
-                    return ,$table
+                    return , $table
                 }
 
                 $results = @(Get-WamNonCompliantUser)

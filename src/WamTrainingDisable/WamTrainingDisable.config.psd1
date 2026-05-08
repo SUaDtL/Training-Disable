@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # WamTrainingDisable.config.psd1 -- Shipped default configuration
 # =============================================================================
 #
@@ -148,9 +148,9 @@
         # yyyyMMdd string. v1's filenames are pinned by ADR 0006 (the VIP
         # file is a downstream contract); v2 keeps them.
         FileNameFormat = @{
-            Main    = 'LockoutUsers_All_{0:yyyyMMdd}.log'
-            Vip     = 'LockoutUsers_VIP_{0:yyyyMMdd}.log'
-            Exempt  = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
+            Main = 'LockoutUsers_All_{0:yyyyMMdd}.log'
+            Vip = 'LockoutUsers_VIP_{0:yyyyMMdd}.log'
+            Exempt = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
             Lockout = 'LockoutList_{0:yyyyMMdd}.txt'
         }
 

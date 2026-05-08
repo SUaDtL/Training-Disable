@@ -76,15 +76,15 @@ Describe 'Get-WamUserDetail' {
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 Mock -CommandName Get-ADUser -MockWith {
                     [pscustomobject] @{
-                        SamAccountName    = $Identity
-                        Name              = 'Alice Normal'
-                        Enabled           = $true
-                        whenCreated       = [datetime]'2024-01-01'
-                        Department        = 'Engineering'
-                        OfficePhone       = '555-1212'
-                        Description       = 'Software Engineer II'
+                        SamAccountName = $Identity
+                        Name = 'Alice Normal'
+                        Enabled = $true
+                        whenCreated = [datetime]'2024-01-01'
+                        Department = 'Engineering'
+                        OfficePhone = '555-1212'
+                        Description = 'Software Engineer II'
                         DistinguishedName = 'CN=alice.normal,OU=Users,DC=corp'
-                        MemberOf          = @(
+                        MemberOf = @(
                             'CN=Engineers,OU=Groups,DC=corp'
                             'CN=VIP No Tng Req,OU=Groups,DC=corp'
                         )
@@ -107,7 +107,7 @@ Describe 'Get-WamUserDetail' {
 
         It 'calls Get-ADUser exactly once (defect-4 fix; v1 made two calls per user)' {
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
-                $detail = Get-WamUserDetail -Identity 'alice.normal'
+                $null = Get-WamUserDetail -Identity 'alice.normal'
                 Should -Invoke Get-ADUser -Times 1
             }
         }
@@ -171,7 +171,7 @@ Describe 'Get-WamUserDetail' {
 
         It 'requests the union of v1 + v2 properties from Get-ADUser' {
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
-                $detail = Get-WamUserDetail -Identity 'alice.normal'
+                $null = Get-WamUserDetail -Identity 'alice.normal'
                 Should -Invoke Get-ADUser -ParameterFilter {
                     $Properties -contains 'Department' -and
                     $Properties -contains 'OfficePhone' -and
@@ -186,7 +186,7 @@ Describe 'Get-WamUserDetail' {
 
         It 'passes -ErrorAction Stop to Get-ADUser' {
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
-                $detail = Get-WamUserDetail -Identity 'alice.normal'
+                $null = Get-WamUserDetail -Identity 'alice.normal'
                 Should -Invoke Get-ADUser -ParameterFilter { $ErrorAction -eq 'Stop' }
             }
         }
@@ -200,15 +200,15 @@ Describe 'Get-WamUserDetail' {
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 Mock -CommandName Get-ADUser -MockWith {
                     [pscustomobject] @{
-                        SamAccountName    = $Identity
-                        Name              = 'Alice Normal'
-                        Enabled           = $true
-                        whenCreated       = [datetime]'2024-01-01'
-                        Department        = 'Engineering'
-                        OfficePhone       = '555-1212'
-                        Description       = 'Software Engineer II'
+                        SamAccountName = $Identity
+                        Name = 'Alice Normal'
+                        Enabled = $true
+                        whenCreated = [datetime]'2024-01-01'
+                        Department = 'Engineering'
+                        OfficePhone = '555-1212'
+                        Description = 'Software Engineer II'
                         DistinguishedName = 'CN=alice.normal,OU=Users,DC=corp'
-                        MemberOf          = @(
+                        MemberOf = @(
                             'CN=Engineers,OU=Groups,DC=corp'
                             'CN=VIP No Tng Req,OU=Groups,DC=corp'
                         )
@@ -235,7 +235,7 @@ Describe 'Get-WamUserDetail' {
 
         It 'calls Get-ADGroup once per DN in MemberOf' {
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
-                $detail = Get-WamUserDetail -Identity 'alice.normal'
+                $null = Get-WamUserDetail -Identity 'alice.normal'
                 Should -Invoke Get-ADGroup -Times 2
             }
         }
@@ -245,15 +245,15 @@ Describe 'Get-WamUserDetail' {
                 # Override Get-ADUser to return MemberOf = @()
                 Mock -CommandName Get-ADUser -MockWith {
                     [pscustomobject] @{
-                        SamAccountName    = $Identity
-                        Name              = 'Alice Normal'
-                        Enabled           = $true
-                        whenCreated       = [datetime]'2024-01-01'
-                        Department        = 'Engineering'
-                        OfficePhone       = '555-1212'
-                        Description       = 'Software Engineer II'
+                        SamAccountName = $Identity
+                        Name = 'Alice Normal'
+                        Enabled = $true
+                        whenCreated = [datetime]'2024-01-01'
+                        Department = 'Engineering'
+                        OfficePhone = '555-1212'
+                        Description = 'Software Engineer II'
                         DistinguishedName = 'CN=alice.normal,OU=Users,DC=corp'
-                        MemberOf          = @()
+                        MemberOf = @()
                     }
                 }
 
@@ -291,7 +291,7 @@ Describe 'Get-WamUserDetail' {
 
         It 'Get-ADGroup is called with -ErrorAction SilentlyContinue (so a deleted-group race does not abort the user)' {
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
-                $detail = Get-WamUserDetail -Identity 'alice.normal'
+                $null = Get-WamUserDetail -Identity 'alice.normal'
                 Should -Invoke Get-ADGroup -ParameterFilter { $ErrorAction -eq 'SilentlyContinue' }
             }
         }
@@ -304,15 +304,15 @@ Describe 'Get-WamUserDetail' {
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 Mock -CommandName Get-ADUser -MockWith {
                     [pscustomobject] @{
-                        SamAccountName    = $Identity
-                        Name              = 'Alice Normal'
-                        Enabled           = $true
-                        whenCreated       = [datetime]'2024-01-01'
-                        Department        = 'Engineering'
-                        OfficePhone       = '555-1212'
-                        Description       = 'Software Engineer II'
+                        SamAccountName = $Identity
+                        Name = 'Alice Normal'
+                        Enabled = $true
+                        whenCreated = [datetime]'2024-01-01'
+                        Department = 'Engineering'
+                        OfficePhone = '555-1212'
+                        Description = 'Software Engineer II'
                         DistinguishedName = 'CN=alice.normal,OU=Users,DC=corp'
-                        MemberOf          = @(
+                        MemberOf = @(
                             'CN=Engineers,OU=Groups,DC=corp'
                             'CN=VIP No Tng Req,OU=Groups,DC=corp'
                         )

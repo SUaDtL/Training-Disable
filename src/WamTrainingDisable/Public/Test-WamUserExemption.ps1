@@ -182,7 +182,7 @@ function Test-WamUserExemption {
         }
         return [pscustomobject] @{
             IsExempt = $true
-            Reason   = 'Account is already disabled.'
+            Reason = 'Account is already disabled.'
             Channels = $channels
         }
     }
@@ -209,7 +209,7 @@ function Test-WamUserExemption {
         }
         return [pscustomobject] @{
             IsExempt = $true
-            Reason   = "Account is less than $($Policy.GracePeriodDays) days old."
+            Reason = "Account is less than $($Policy.GracePeriodDays) days old."
             Channels = $channels
         }
     }
@@ -232,7 +232,7 @@ function Test-WamUserExemption {
             }
             return [pscustomobject] @{
                 IsExempt = $true
-                Reason   = "$exemptOu Users are currently exempt from WAM Training."
+                Reason = "$exemptOu Users are currently exempt from WAM Training."
                 Channels = $channels
             }
         }
@@ -256,7 +256,7 @@ function Test-WamUserExemption {
                 }
                 return [pscustomobject] @{
                     IsExempt = $true
-                    Reason   = 'User is a member of an exemption group in AD.'
+                    Reason = 'User is a member of an exemption group in AD.'
                     Channels = $channels
                 }
             }
@@ -276,7 +276,7 @@ function Test-WamUserExemption {
     }
     return [pscustomobject] @{
         IsExempt = $false
-        Reason   = 'Account Disabled.'
+        Reason = 'Account Disabled.'
         Channels = $channels
     }
 }

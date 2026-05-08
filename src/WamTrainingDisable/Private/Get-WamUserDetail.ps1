@@ -97,14 +97,14 @@ function Get-WamUserDetail {
     # exactly once (here) instead of being repeated on every comparison.
     # -------------------------------------------------------------------------
     return [pscustomobject] @{
-        SamAccountName    = $adUser.SamAccountName
-        Name              = $adUser.Name
-        Enabled           = [bool] $adUser.Enabled
-        whenCreated       = [datetime] $adUser.whenCreated
-        Department        = $adUser.Department
-        OfficePhone       = $adUser.OfficePhone
-        Description       = $adUser.Description
+        SamAccountName = $adUser.SamAccountName
+        Name = $adUser.Name
+        Enabled = [bool] $adUser.Enabled
+        whenCreated = [datetime] $adUser.whenCreated
+        Department = $adUser.Department
+        OfficePhone = $adUser.OfficePhone
+        Description = $adUser.Description
         DistinguishedName = $adUser.DistinguishedName
-        MemberOf          = $groupNames
+        MemberOf = $groupNames
     }
 }

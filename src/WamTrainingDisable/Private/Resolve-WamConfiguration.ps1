@@ -161,16 +161,16 @@ function Resolve-WamConfiguration {
     # validation pass.
     # -------------------------------------------------------------------------
     $envOverrideMap = @(
-        @{ EnvVar = 'WAM_SQL_CONNECTION';        Path = @('Sql', 'ConnectionString');        Type = 'string' }
-        @{ EnvVar = 'WAM_SQL_STORED_PROCEDURE';  Path = @('Sql', 'StoredProcedure');          Type = 'string' }
-        @{ EnvVar = 'WAM_SQL_USERNAME_COLUMN';   Path = @('Sql', 'UsernameColumn');           Type = 'string' }
-        @{ EnvVar = 'WAM_SQL_TIMEOUT_SECONDS';   Path = @('Sql', 'CommandTimeoutSeconds');    Type = 'int'    }
-        @{ EnvVar = 'WAM_GRACE_PERIOD_DAYS';     Path = @('Policy', 'GracePeriodDays');       Type = 'int'    }
-        @{ EnvVar = 'WAM_LOG_DIR';               Path = @('Logging', 'Directory');            Type = 'string' }
-        @{ EnvVar = 'WAM_LOG_ENCODING';          Path = @('Logging', 'Encoding');             Type = 'string' }
-        @{ EnvVar = 'WAM_LEGACY_TIMESTAMP';      Path = @('Logging', 'LegacyTimestamp');      Type = 'bool'   }
-        @{ EnvVar = 'WAM_TIMESTAMP_FORMAT';      Path = @('Logging', 'TimestampFormat');      Type = 'string' }
-        @{ EnvVar = 'WAM_VIP_DN_PATTERN';        Path = @('Logging', 'Channels', 'VipDistinguishedNamePattern'); Type = 'string' }
+        @{ EnvVar = 'WAM_SQL_CONNECTION'      ; Path = @('Sql', 'ConnectionString')                              ; Type = 'string' }
+        @{ EnvVar = 'WAM_SQL_STORED_PROCEDURE'; Path = @('Sql', 'StoredProcedure')                                ; Type = 'string' }
+        @{ EnvVar = 'WAM_SQL_USERNAME_COLUMN' ; Path = @('Sql', 'UsernameColumn')                                 ; Type = 'string' }
+        @{ EnvVar = 'WAM_SQL_TIMEOUT_SECONDS' ; Path = @('Sql', 'CommandTimeoutSeconds')                          ; Type = 'int' }
+        @{ EnvVar = 'WAM_GRACE_PERIOD_DAYS'   ; Path = @('Policy', 'GracePeriodDays')                             ; Type = 'int' }
+        @{ EnvVar = 'WAM_LOG_DIR'             ; Path = @('Logging', 'Directory')                                  ; Type = 'string' }
+        @{ EnvVar = 'WAM_LOG_ENCODING'        ; Path = @('Logging', 'Encoding')                                   ; Type = 'string' }
+        @{ EnvVar = 'WAM_LEGACY_TIMESTAMP'    ; Path = @('Logging', 'LegacyTimestamp')                            ; Type = 'bool' }
+        @{ EnvVar = 'WAM_TIMESTAMP_FORMAT'    ; Path = @('Logging', 'TimestampFormat')                            ; Type = 'string' }
+        @{ EnvVar = 'WAM_VIP_DN_PATTERN'      ; Path = @('Logging', 'Channels', 'VipDistinguishedNamePattern')    ; Type = 'string' }
     )
 
     $envOverrides = @{}

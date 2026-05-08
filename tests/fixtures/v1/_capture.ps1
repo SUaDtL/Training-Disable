@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # tests/fixtures/v1/_capture.ps1 -- WAM Training Disable
 # =============================================================================
 #
@@ -92,64 +92,64 @@ $PinnedNow = [datetime]'2026-05-08T10:30:00'
 
 $AdRecords = @{
     'alice.normal' = @{
-        Name              = 'Alice Normal'
-        Enabled           = $true
-        whenCreated       = $PinnedNow.AddDays(-90)
-        Department        = 'Engineering'
-        OfficePhone       = '555-0001'
-        Description       = 'Software Engineer II'
+        Name = 'Alice Normal'
+        Enabled = $true
+        whenCreated = $PinnedNow.AddDays(-90)
+        Department = 'Engineering'
+        OfficePhone = '555-0001'
+        Description = 'Software Engineer II'
         DistinguishedName = 'CN=alice.normal,OU=Users,DC=example,DC=com'
-        MemberOf          = @()
+        MemberOf = @()
     }
     'bob.disabled' = @{
-        Name              = 'Bob Disabled'
-        Enabled           = $false
-        whenCreated       = $PinnedNow.AddDays(-90)
-        Department        = 'Engineering'
-        OfficePhone       = '555-0002'
-        Description       = 'Software Engineer II'
+        Name = 'Bob Disabled'
+        Enabled = $false
+        whenCreated = $PinnedNow.AddDays(-90)
+        Department = 'Engineering'
+        OfficePhone = '555-0002'
+        Description = 'Software Engineer II'
         DistinguishedName = 'CN=bob.disabled,OU=Users,DC=example,DC=com'
-        MemberOf          = @()
+        MemberOf = @()
     }
     'carol.grace' = @{
-        Name              = 'Carol Grace'
-        Enabled           = $true
-        whenCreated       = $PinnedNow.AddDays(-10)
-        Department        = 'Engineering'
-        OfficePhone       = '555-0003'
-        Description       = 'Software Engineer I'
+        Name = 'Carol Grace'
+        Enabled = $true
+        whenCreated = $PinnedNow.AddDays(-10)
+        Department = 'Engineering'
+        OfficePhone = '555-0003'
+        Description = 'Software Engineer I'
         DistinguishedName = 'CN=carol.grace,OU=Users,DC=example,DC=com'
-        MemberOf          = @()
+        MemberOf = @()
     }
     'dan.rel' = @{
-        Name              = 'Dan REL'
-        Enabled           = $true
-        whenCreated       = $PinnedNow.AddDays(-90)
-        Department        = 'Engineering'
-        OfficePhone       = '555-0004'
-        Description       = 'Software Engineer II'
+        Name = 'Dan REL'
+        Enabled = $true
+        whenCreated = $PinnedNow.AddDays(-90)
+        Department = 'Engineering'
+        OfficePhone = '555-0004'
+        Description = 'Software Engineer II'
         DistinguishedName = 'CN=dan.rel,OU=REL,OU=Users,DC=example,DC=com'
-        MemberOf          = @()
+        MemberOf = @()
     }
     'eve.sco' = @{
-        Name              = 'Eve SCO'
-        Enabled           = $true
-        whenCreated       = $PinnedNow.AddDays(-90)
-        Department        = 'Engineering'
-        OfficePhone       = '555-0005'
-        Description       = 'Software Engineer II'
+        Name = 'Eve SCO'
+        Enabled = $true
+        whenCreated = $PinnedNow.AddDays(-90)
+        Department = 'Engineering'
+        OfficePhone = '555-0005'
+        Description = 'Software Engineer II'
         DistinguishedName = 'CN=eve.sco,OU=SCO,OU=Users,DC=example,DC=com'
-        MemberOf          = @()
+        MemberOf = @()
     }
     'frank.group' = @{
-        Name              = 'Frank Group'
-        Enabled           = $true
-        whenCreated       = $PinnedNow.AddDays(-90)
-        Department        = 'Engineering'
-        OfficePhone       = '555-0006'
-        Description       = 'Software Engineer II'
+        Name = 'Frank Group'
+        Enabled = $true
+        whenCreated = $PinnedNow.AddDays(-90)
+        Department = 'Engineering'
+        OfficePhone = '555-0006'
+        Description = 'Software Engineer II'
         DistinguishedName = 'CN=frank.group,OU=Users,DC=example,DC=com'
-        MemberOf          = @('CN=VIP No Tng Req,OU=Groups,DC=example,DC=com')
+        MemberOf = @('CN=VIP No Tng Req,OU=Groups,DC=example,DC=com')
     }
 }
 
@@ -204,10 +204,10 @@ if (-not (Test-Path -Path $ExpectedDir)) {
 
 # Map of (output-name -> source-path) drives the capture loop.
 $captures = @(
-    @{ Name = 'lockout-list.txt';     Source = $result.LockoutListFile; Normalize = $false }
-    @{ Name = 'main.normalized.log';  Source = $result.LogFileALL;      Normalize = $true  }
-    @{ Name = 'vip.normalized.log';   Source = $result.LogFileVIP;      Normalize = $true  }
-    @{ Name = 'exempt.normalized.log';Source = $result.LogFileExempt;   Normalize = $true  }
+    @{ Name = 'lockout-list.txt'; Source = $result.LockoutListFile; Normalize = $false }
+    @{ Name = 'main.normalized.log'; Source = $result.LogFileALL; Normalize = $true }
+    @{ Name = 'vip.normalized.log'; Source = $result.LogFileVIP; Normalize = $true }
+    @{ Name = 'exempt.normalized.log'; Source = $result.LogFileExempt; Normalize = $true }
 )
 
 foreach ($capture in $captures) {
@@ -257,7 +257,7 @@ foreach ($capture in $captures) {
 # fixture so we know if v2's behavior diverges.
 # -----------------------------------------------------------------------------
 $adCaptureMap = @(
-    @{ Path = 'ad-calls.default.json';     Source = $result }
+    @{ Path = 'ad-calls.default.json'; Source = $result }
     @{ Path = 'ad-calls.enforcement.json'; Source = $enforcementResult }
 )
 

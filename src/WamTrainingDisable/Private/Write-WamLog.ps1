@@ -134,12 +134,30 @@ function Write-WamLog {
         'ascii'
     }
     $encoding = switch -Regex ($encodingName) {
-        '^(?i)ascii$'                              { [System.Text.Encoding]::ASCII; break }
-        '^(?i)utf8$'                               { [System.Text.UTF8Encoding]::new($false); break }
-        '^(?i)utf8(no)?bom$'                       { [System.Text.UTF8Encoding]::new($false); break }
-        '^(?i)utf8bom$'                            { [System.Text.UTF8Encoding]::new($true); break }
-        '^(?i)unicode$'                            { [System.Text.Encoding]::Unicode; break }
-        '^(?i)utf32$'                              { [System.Text.Encoding]::UTF32; break }
+        '^(?i)ascii$' {
+            [System.Text.Encoding]::ASCII
+            break
+        }
+        '^(?i)utf8$' {
+            [System.Text.UTF8Encoding]::new($false)
+            break
+        }
+        '^(?i)utf8(no)?bom$' {
+            [System.Text.UTF8Encoding]::new($false)
+            break
+        }
+        '^(?i)utf8bom$' {
+            [System.Text.UTF8Encoding]::new($true)
+            break
+        }
+        '^(?i)unicode$' {
+            [System.Text.Encoding]::Unicode
+            break
+        }
+        '^(?i)utf32$' {
+            [System.Text.Encoding]::UTF32
+            break
+        }
         default {
             throw "Write-WamLog: Unsupported encoding '$encodingName'. Use one of: ascii, utf8, utf8bom, unicode, utf32."
         }

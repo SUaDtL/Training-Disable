@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # tests/Private/Write-WamLog.Tests.ps1 -- WAM Training Disable
 # =============================================================================
 #
@@ -96,13 +96,13 @@ Describe 'Write-WamLog' {
             # prod string.
             & (Get-Module -Name 'WamTrainingDisable') {
                 $script:DefaultLoggingConfig = @{
-                    Directory       = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
-                    Encoding        = 'ascii'
+                    Directory = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
+                    Encoding = 'ascii'
                     TimestampFormat = 'yyyy-MM-dd HH:mm:ss'
-                    FileNameFormat  = @{
-                        Main    = 'LockoutUsers_All_{0:yyyyMMdd}.log'
-                        Vip     = 'LockoutUsers_VIP_{0:yyyyMMdd}.log'
-                        Exempt  = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
+                    FileNameFormat = @{
+                        Main = 'LockoutUsers_All_{0:yyyyMMdd}.log'
+                        Vip = 'LockoutUsers_VIP_{0:yyyyMMdd}.log'
+                        Exempt = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
                         Lockout = 'LockoutList_{0:yyyyMMdd}.txt'
                     }
                 }
@@ -180,13 +180,13 @@ Describe 'Write-WamLog' {
             & (Get-Module -Name 'WamTrainingDisable') {
                 $script:DirectoryAlreadyExists = $true
                 $script:DefaultLoggingConfig = @{
-                    Directory       = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
-                    Encoding        = 'ascii'
+                    Directory = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
+                    Encoding = 'ascii'
                     TimestampFormat = 'yyyy-MM-dd HH:mm:ss'
-                    FileNameFormat  = @{
-                        Main    = 'LockoutUsers_All_{0:yyyyMMdd}.log'
-                        Vip     = 'LockoutUsers_VIP_{0:yyyyMMdd}.log'
-                        Exempt  = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
+                    FileNameFormat = @{
+                        Main = 'LockoutUsers_All_{0:yyyyMMdd}.log'
+                        Vip = 'LockoutUsers_VIP_{0:yyyyMMdd}.log'
+                        Exempt = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
                         Lockout = 'LockoutList_{0:yyyyMMdd}.txt'
                     }
                 }
@@ -284,11 +284,11 @@ Describe 'Write-WamLog' {
             # the wrapper still receives an ASCII encoding instance.
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 $configWithoutEncoding = @{
-                    Directory       = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
-                    FileNameFormat  = @{
-                        Main    = 'LockoutUsers_All_{0:yyyyMMdd}.log'
-                        Vip     = 'LockoutUsers_VIP_{0:yyyyMMdd}.log'
-                        Exempt  = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
+                    Directory = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
+                    FileNameFormat = @{
+                        Main = 'LockoutUsers_All_{0:yyyyMMdd}.log'
+                        Vip = 'LockoutUsers_VIP_{0:yyyyMMdd}.log'
+                        Exempt = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
                     }
                 }
                 Write-WamLog `
@@ -367,7 +367,7 @@ Describe 'Write-WamLog' {
             # guards against misconfigured LoggingConfig inputs.
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 $configWithoutDir = @{
-                    FileNameFormat  = @{ Main = 'test_{0:yyyyMMdd}.log' }
+                    FileNameFormat = @{ Main = 'test_{0:yyyyMMdd}.log' }
                 }
                 {
                     Write-WamLog `
@@ -404,9 +404,9 @@ Describe 'Write-WamLog' {
             # user-supplied config that deleted a FileNameFormat key.
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 $configWithoutVip = @{
-                    Directory       = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
-                    FileNameFormat  = @{
-                        Main   = 'LockoutUsers_All_{0:yyyyMMdd}.log'
+                    Directory = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
+                    FileNameFormat = @{
+                        Main = 'LockoutUsers_All_{0:yyyyMMdd}.log'
                         Exempt = 'LockoutUsers_EXEMPT_{0:yyyyMMdd}.log'
                     }
                 }
@@ -427,8 +427,8 @@ Describe 'Write-WamLog' {
             # validates that an unknown channel name causes the call to fail.
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 $configWithoutDir = @{
-                    Directory       = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
-                    FileNameFormat  = @{ Main = 'test_{0:yyyyMMdd}.log' }
+                    Directory = '/tmp/wam-test/Script_Output/WAM/{0:yyyyMMdd}'
+                    FileNameFormat = @{ Main = 'test_{0:yyyyMMdd}.log' }
                 }
                 {
                     Write-WamLog `

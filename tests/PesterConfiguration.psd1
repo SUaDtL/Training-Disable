@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # tests/PesterConfiguration.psd1 -- WAM Training Disable
 # =============================================================================
 #
@@ -74,9 +74,9 @@
     # TestResult section: NUnit-format XML for CI artifact upload.
     # -------------------------------------------------------------------------
     TestResult = @{
-        Enabled      = $true
+        Enabled = $true
         OutputFormat = 'NUnitXml'
-        OutputPath   = 'TestResults.xml'
+        OutputPath = 'TestResults.xml'
     }
 
     # -------------------------------------------------------------------------

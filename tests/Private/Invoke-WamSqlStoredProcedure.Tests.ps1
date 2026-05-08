@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # tests/Private/Invoke-WamSqlStoredProcedure.Tests.ps1 -- WAM Training Disable
 # =============================================================================
 #
@@ -29,6 +29,28 @@
 # =============================================================================
 
 #Requires -Version 5.1
+
+# -----------------------------------------------------------------------------
+# File-level PSScriptAnalyzer suppression.
+# -----------------------------------------------------------------------------
+# This suite uses $global:WamSqlTestInstrumentation to share a hashtable
+# between the BeforeEach setup, the It bodies, and the Pester Mock -MockWith
+# script blocks. Pester's mock dispatcher executes -MockWith bodies in a
+# scope that does NOT inherit module-script-scope variables reliably, so the
+# only scope visible from all three call sites is global. The variable is
+# explicitly removed in AfterAll so it does not leak across test runs.
+#
+# PSAvoidGlobalVars is suppressed at file scope (attribute on the script's
+# top-level param block) rather than per-line because the variable is
+# referenced 30+ times across the file and per-line suppression would dwarf
+# the substantive code. The WamSql prefix on the name avoids collisions with
+# any other suite that runs in the same session.
+# -----------------------------------------------------------------------------
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidGlobalVars',
+    '',
+    Justification = 'Pester Mock -MockWith bodies cannot see module-script-scope variables reliably; global is the only scope visible from BeforeEach setup, It bodies, and the mock dispatcher. Cleaned up in AfterAll.')]
+param()
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
@@ -64,80 +86,80 @@ BeforeAll {
     # The object holds a reference to the shared Instrumentation hashtable
     # so tests can assert what happened after the function returns.
     function global:New-WamFakeSqlConnection {
-            param([System.Collections.Hashtable] $Instrumentation)
-            $conn = [pscustomobject] @{
-                ConnectionString = $null
-                State = 'Closed'
-                InstrumentationRef = $Instrumentation
-            }
-            Add-Member -InputObject $conn -MemberType ScriptMethod -Name Open -Value {
-                $this.InstrumentationRef.OpenCalls++
-                $this.InstrumentationRef.EventLog.Add('Open')
-                if ($this.InstrumentationRef.OpenThrows) {
-                    throw 'simulated open failure'
-                }
-                $this.State = 'Open'
-            }
-            Add-Member -InputObject $conn -MemberType ScriptMethod -Name Close -Value {
-                $this.InstrumentationRef.CloseCalls++
-                $this.State = 'Closed'
-            }
-            Add-Member -InputObject $conn -MemberType ScriptMethod -Name Dispose -Value {
-                $this.InstrumentationRef.DisposeCalls++
-                $this.InstrumentationRef.EventLog.Add('Dispose')
-                $this.State = 'Closed'
-            }
-            return $conn
+        param([System.Collections.Hashtable] $Instrumentation)
+        $conn = [pscustomobject] @{
+            ConnectionString = $null
+            State = 'Closed'
+            InstrumentationRef = $Instrumentation
         }
+        Add-Member -InputObject $conn -MemberType ScriptMethod -Name Open -Value {
+            $this.InstrumentationRef.OpenCalls++
+            $this.InstrumentationRef.EventLog.Add('Open')
+            if ($this.InstrumentationRef.OpenThrows) {
+                throw 'simulated open failure'
+            }
+            $this.State = 'Open'
+        }
+        Add-Member -InputObject $conn -MemberType ScriptMethod -Name Close -Value {
+            $this.InstrumentationRef.CloseCalls++
+            $this.State = 'Closed'
+        }
+        Add-Member -InputObject $conn -MemberType ScriptMethod -Name Dispose -Value {
+            $this.InstrumentationRef.DisposeCalls++
+            $this.InstrumentationRef.EventLog.Add('Dispose')
+            $this.State = 'Closed'
+        }
+        return $conn
+    }
 
     # New-FakeSqlCommand returns a custom object with properties for
     # CommandType, CommandText, CommandTimeout, and Connection. The
     # function under test will populate these. We track them in
     # Instrumentation if needed for a specific test.
     function global:New-WamFakeSqlCommand {
-            param([System.Collections.Hashtable] $Instrumentation)
-            $cmd = [pscustomobject] @{
-                CommandType = $null
-                CommandText = $null
-                CommandTimeout = $null
-                Connection = $null
-                InstrumentationRef = $Instrumentation
-            }
-            return $cmd
+        param([System.Collections.Hashtable] $Instrumentation)
+        $cmd = [pscustomobject] @{
+            CommandType = $null
+            CommandText = $null
+            CommandTimeout = $null
+            Connection = $null
+            InstrumentationRef = $Instrumentation
         }
+        return $cmd
+    }
 
     # New-FakeSqlDataAdapter returns a custom object with a SelectCommand
     # property and a Fill() method. The Fill method increments a counter,
     # optionally throws (if FillThrows is true), and populates the DataSet's
     # Tables collection with the tables from Instrumentation.TablesToReturn.
     function global:New-WamFakeSqlDataAdapter {
-            param([System.Collections.Hashtable] $Instrumentation)
-            $adapter = [pscustomobject] @{
-                SelectCommand = $null
-                InstrumentationRef = $Instrumentation
+        param([System.Collections.Hashtable] $Instrumentation)
+        $adapter = [pscustomobject] @{
+            SelectCommand = $null
+            InstrumentationRef = $Instrumentation
+        }
+        Add-Member -InputObject $adapter -MemberType ScriptMethod -Name Fill -Value {
+            param($dataSet)
+            $this.InstrumentationRef.FillCalls++
+            $this.InstrumentationRef.EventLog.Add('Fill')
+            if ($this.InstrumentationRef.FillThrows) {
+                throw 'simulated fill failure'
             }
-            Add-Member -InputObject $adapter -MemberType ScriptMethod -Name Fill -Value {
-                param($dataSet)
-                $this.InstrumentationRef.FillCalls++
-                $this.InstrumentationRef.EventLog.Add('Fill')
-                if ($this.InstrumentationRef.FillThrows) {
-                    throw 'simulated fill failure'
-                }
-                # The script method inherits Set-StrictMode -Version 3.0 from
+            # The script method inherits Set-StrictMode -Version 3.0 from
             # the test file, which errors on some DataTable property
             # accessors after a Tables.Add reparenting. Drop strict mode
             # locally for this critical-path snippet so the foreach can
             # iterate without spurious "property cannot be found" errors.
             Set-StrictMode -Off
-                $rowsAffected = 0
-                foreach ($table in $this.InstrumentationRef.TablesToReturn) {
-                    $rowsAffected += $table.Rows.Count
-                    $null = $dataSet.Tables.Add($table)
-                }
-                return $rowsAffected
+            $rowsAffected = 0
+            foreach ($table in $this.InstrumentationRef.TablesToReturn) {
+                $rowsAffected += $table.Rows.Count
+                $null = $dataSet.Tables.Add($table)
             }
-            return $adapter
+            return $rowsAffected
         }
+        return $adapter
+    }
 }
 
 AfterAll {
@@ -151,10 +173,10 @@ AfterAll {
     # pwsh session that loads multiple test suites) does not see them
     # leaking across boundaries.
     foreach ($helperName in @(
-        'New-WamFakeSqlConnection',
-        'New-WamFakeSqlCommand',
-        'New-WamFakeSqlDataAdapter'
-    )) {
+            'New-WamFakeSqlConnection',
+            'New-WamFakeSqlCommand',
+            'New-WamFakeSqlDataAdapter'
+        )) {
         if (Test-Path -Path "function:global:$helperName") {
             Remove-Item -Path "function:global:$helperName" -Force
         }

@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # tests/Public/Test-WamUserExemption.Tests.ps1 -- WAM Training Disable
 # =============================================================================
 #
@@ -72,10 +72,10 @@ BeforeAll {
             [string[]] $MemberOf = @()
         )
         return [pscustomobject] @{
-            Enabled           = $Enabled
-            whenCreated       = $WhenCreated
+            Enabled = $Enabled
+            whenCreated = $WhenCreated
             DistinguishedName = $DistinguishedName
-            MemberOf          = $MemberOf
+            MemberOf = $MemberOf
         }
     }
 
@@ -98,9 +98,9 @@ BeforeAll {
     # -------------------------------------------------------------------------
     $script:Policy = @{
         GracePeriodDays = 30
-        ExemptOus       = @('REL', 'SCO')
-        ExemptGroups    = @('VIP No Tng Req', 'Temp No Tng Req')
-        OuMatchPattern  = '*OU={0}*'
+        ExemptOus = @('REL', 'SCO')
+        ExemptGroups = @('VIP No Tng Req', 'Temp No Tng Req')
+        OuMatchPattern = '*OU={0}*'
     }
 
     # -------------------------------------------------------------------------

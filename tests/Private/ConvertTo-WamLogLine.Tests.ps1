@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # tests/Private/ConvertTo-WamLogLine.Tests.ps1 -- WAM Training Disable
 # =============================================================================
 #
@@ -180,9 +180,9 @@ Describe 'ConvertTo-WamLogLine' {
                     $line = ConvertTo-WamLogLine `
                         -Message 'x' `
                         -LoggingConfig @{
-                            LegacyTimestamp = $true
-                            TimestampFormat = 'this-must-be-ignored'
-                        } `
+                        LegacyTimestamp = $true
+                        TimestampFormat = 'this-must-be-ignored'
+                    } `
                         -WorkingDate ([datetime]'2026-05-08T10:30:00') `
                         -ComputerName 'TESTHOST'
                     $line | Should -Be '[5/8/2026 10:30:00 AM] [TESTHOST] x'

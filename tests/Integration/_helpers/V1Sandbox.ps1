@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # tests/Integration/_helpers/V1Sandbox.ps1 -- WAM Training Disable
 # =============================================================================
 #
@@ -306,15 +306,15 @@ function Invoke-V1InSandbox {
 
         $record = $AdRecords[$key]
         return [pscustomobject] @{
-            SamAccountName    = $key
-            Name              = $record.Name
-            Enabled           = [bool] $record.Enabled
-            whenCreated       = [datetime] $record.whenCreated
-            Department        = $record.Department
-            OfficePhone       = $record.OfficePhone
-            Description       = $record.Description
+            SamAccountName = $key
+            Name = $record.Name
+            Enabled = [bool] $record.Enabled
+            whenCreated = [datetime] $record.whenCreated
+            Department = $record.Department
+            OfficePhone = $record.OfficePhone
+            Description = $record.Description
             DistinguishedName = $record.DistinguishedName
-            MemberOf          = @($record.MemberOf)
+            MemberOf = @($record.MemberOf)
         }
     }
 
@@ -402,9 +402,9 @@ function Invoke-V1InSandbox {
         # See the [ordered] note in Disable-ADAccount above. Identity comes
         # first in the captured JSON; Description second.
         $setUserCalls.Add([ordered] @{
-            Identity    = $Identity
-            Description = $Description
-        })
+                Identity = $Identity
+                Description = $Description
+            })
     }
 
     function Write-Host {
@@ -436,7 +436,7 @@ function Invoke-V1InSandbox {
     # -------------------------------------------------------------------------
     $env:COMPUTERNAME = $ComputerName
     [System.Threading.Thread]::CurrentThread.CurrentCulture =
-        [System.Globalization.CultureInfo]::new('en-US')
+    [System.Globalization.CultureInfo]::new('en-US')
 
     # -------------------------------------------------------------------------
     # Step 4: Patch v1 to disable its parse-time auto-run.
@@ -506,6 +506,18 @@ function Invoke-V1InSandbox {
     # same scope -- the latest assignment wins.
     # -------------------------------------------------------------------------
     function WAM-SQLLookup {
+        # Why suppress PSUseApprovedVerbs: this stub intentionally reproduces
+        # v1's unapproved-verb function name. The integration sandbox dot-
+        # sources v1's script, then re-defines this function to capture the
+        # call without contacting the real production database. Renaming the
+        # stub would break the shadow-and-replace pattern.
+        [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+            'PSUseApprovedVerbs',
+            '',
+            Justification = 'Intentional shadow of v1 function name; stub captures the call without renaming the surface seen by the dot-sourced v1 script.')]
+        [CmdletBinding()]
+        param()
+
         if (-not (Test-Path -Path $LogFileBasePath)) {
             New-Item -ItemType Directory -Path $LogFileBasePath -Force | Out-Null
         }
@@ -547,12 +559,12 @@ function Invoke-V1InSandbox {
     return [pscustomobject] @{
         LogFileBasePath = $LogFileBasePath
         LockoutListFile = $LockoutListFile
-        LogFileALL      = $LogFileALL
-        LogFileVIP      = $LogFileVIP
-        LogFileExempt   = $LogFileExempt
-        DisableCalls    = $disableCalls.ToArray()
-        SetUserCalls    = $setUserCalls.ToArray()
-        HostMessages    = $hostMessages.ToArray()
+        LogFileALL = $LogFileALL
+        LogFileVIP = $LogFileVIP
+        LogFileExempt = $LogFileExempt
+        DisableCalls = $disableCalls.ToArray()
+        SetUserCalls = $setUserCalls.ToArray()
+        HostMessages = $hostMessages.ToArray()
     }
 }
 

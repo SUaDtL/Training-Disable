@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # PSScriptAnalyzerSettings.psd1 -- WAM Training Disable
 # =============================================================================
 #
@@ -151,7 +151,7 @@
         # working-on-pwsh-7 / broken-on-WindowsPowerShell-5.1 surprise.
         # ---------------------------------------------------------------------
         PSUseCompatibleSyntax = @{
-            Enable         = $true
+            Enable = $true
             TargetVersions = @(
                 '5.1'    # Windows PowerShell 5.1 -- the prod runtime
                 '7.4'    # PowerShell 7.4 LTS -- cross-platform pwsh
@@ -178,23 +178,23 @@
         # PSUseConsistentIndentation: 4 spaces, no tabs.
         # ---------------------------------------------------------------------
         PSUseConsistentIndentation = @{
-            Enable          = $true
+            Enable = $true
             IndentationSize = 4
-            Kind            = 'space'
+            Kind = 'space'
         }
 
         # ---------------------------------------------------------------------
         # PSUseConsistentWhitespace: enable all the sub-checks the rule offers.
         # ---------------------------------------------------------------------
         PSUseConsistentWhitespace = @{
-            Enable                          = $true
-            CheckOpenBrace                  = $true
-            CheckOpenParen                  = $true
-            CheckOperator                   = $true
-            CheckPipe                       = $true
-            CheckSeparator                  = $true
-            CheckParameter                  = $true
-            CheckInnerBrace                 = $true
+            Enable = $true
+            CheckOpenBrace = $true
+            CheckOpenParen = $true
+            CheckOperator = $true
+            CheckPipe = $true
+            CheckSeparator = $true
+            CheckParameter = $true
+            CheckInnerBrace = $true
             CheckPipeForRedundantWhitespace = $true
         }
 
@@ -206,9 +206,9 @@
         # samples use.
         # ---------------------------------------------------------------------
         PSPlaceOpenBrace = @{
-            Enable             = $true
-            OnSameLine         = $true
-            NewLineAfter       = $true
+            Enable = $true
+            OnSameLine = $true
+            NewLineAfter = $true
             IgnoreOneLineBlock = $true
         }
 
@@ -216,10 +216,10 @@
         # PSPlaceCloseBrace: closing brace on its own line.
         # ---------------------------------------------------------------------
         PSPlaceCloseBrace = @{
-            Enable             = $true
-            NewLineAfter       = $true
+            Enable = $true
+            NewLineAfter = $true
             IgnoreOneLineBlock = $true
-            NoEmptyLineBefore  = $false
+            NoEmptyLineBefore = $false
         }
     }
 }
