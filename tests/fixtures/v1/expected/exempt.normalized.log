@@ -1,0 +1,6 @@
+********************BEGIN - WAM Training Non-Compliance Lockout - EXEMPT********************
+carol.grace, Carol Grace, Engineering, 555-0003, Account is less than 30 days old.
+dan.rel, Dan REL, Engineering, 555-0004, REL Users are currently exempt from WAM Training.
+eve.sco, Eve SCO, Engineering, 555-0005, SCO Users are currently exempt from WAM Training.
+frank.group, Frank Group, Engineering, 555-0006, User is a member of an exemption group in AD.
+********************END - WAM Training Non-Compliance Lockout - EXEMPT********************

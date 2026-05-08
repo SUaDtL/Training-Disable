@@ -1,0 +1,13 @@
+{
+  "DisableCalls": [
+    {
+      "Identity": "alice.normal"
+    }
+  ],
+  "SetUserCalls": [
+    {
+      "Identity": "alice.normal",
+      "Description": "Software Engineer II, (Account disabled for training non-compliance on 5/8/2026."
+    }
+  ]
+}

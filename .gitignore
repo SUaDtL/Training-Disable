@@ -1,0 +1,94 @@
+# =============================================================================
+# .gitignore -- WAM Training Disable
+# =============================================================================
+#
+# Why this file exists:
+#   PowerShell projects accumulate a few classes of generated artifacts that we
+#   never want in source control: test result files, coverage reports, locally
+#   resolved configuration files (the kind that hold connection strings), and
+#   editor scratch files. Listing them here keeps the repo clean and avoids the
+#   embarrassing class of bug where someone commits a config file containing a
+#   real production credential.
+#
+# Convention: each block has a one-line header explaining WHAT it covers and a
+# short comment explaining WHY before the patterns themselves.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Pester test artifacts
+# -----------------------------------------------------------------------------
+# Pester writes NUnit/JUnit XML and code-coverage XML side-by-side with the
+# tests when run with -OutputFile or via the project's tests/PesterConfiguration.
+# Those files are generated on every test run, get uploaded as CI artifacts,
+# and have no business in git.
+TestResults*.xml
+coverage*.xml
+PesterCoverage*.xml
+*.Tests.xml
+
+
+# -----------------------------------------------------------------------------
+# Local resolved configuration
+# -----------------------------------------------------------------------------
+# The module's configuration resolver looks at a user-local config file before
+# falling back to the shipped default. That local file is, by design, where the
+# real SQL connection string and other environment-specific values live. NEVER
+# commit it.
+WamTrainingDisable.local.config.psd1
+config.local.psd1
+*.local.psd1
+
+
+# -----------------------------------------------------------------------------
+# Per-run output (logs the script itself produces)
+# -----------------------------------------------------------------------------
+# A developer running the script (or DropInCompat tests) locally will produce
+# output files under output/ or out/. These are run artifacts; the canonical
+# fixtures live under tests/fixtures and are checked in deliberately.
+output/
+out/
+LockoutUsers_*.log
+LockoutList_*.txt
+
+
+# -----------------------------------------------------------------------------
+# PowerShell working files
+# -----------------------------------------------------------------------------
+# *.bak: PowerShell ISE and a few editors leave .bak files when saving over an
+# existing file. *.ps1xml.bak: same for type/format files. Catch them all.
+*.bak
+*.tmp
+
+
+# -----------------------------------------------------------------------------
+# Editor / IDE
+# -----------------------------------------------------------------------------
+# VS Code's .vscode folder may contain user-local launch settings or paths to
+# private credentials. We deliberately do NOT track it; if a developer wants
+# to share editor settings, they should commit a sample as .vscode.example.
+.vscode/
+.vs/
+*.swp
+*.swo
+.idea/
+
+
+# -----------------------------------------------------------------------------
+# OS-generated noise
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# -----------------------------------------------------------------------------
+# Build / publish output
+# -----------------------------------------------------------------------------
+# If we ever wire up a build that publishes the module to a local feed (the
+# CONTRIBUTING.md "future work" section), it will land in build/ or publish/.
+# Pre-emptively ignored so a future contributor doesn't accidentally commit a
+# nupkg containing every file in the repo.
+build/
+publish/
+*.nupkg

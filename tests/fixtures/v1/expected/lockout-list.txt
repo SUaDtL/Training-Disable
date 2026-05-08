@@ -1,0 +1,6 @@
+alice.normal
+bob.disabled
+carol.grace
+dan.rel
+eve.sco
+frank.group
