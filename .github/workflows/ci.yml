@@ -196,6 +196,16 @@ jobs:
     needs: analyze
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
+    # We select the shell at JOB level via defaults.run.shell rather than
+    # repeating `shell: ${{ matrix.shell }}` on each step. The reason is
+    # GitHub Actions context-availability rules: the `matrix` context is
+    # supported in `jobs.<id>.defaults.run` but NOT in
+    # `jobs.<id>.steps.<>.shell`, so the per-step form raises
+    # "Unrecognized named-value: 'matrix'" at workflow-validation time.
+    # Reference: https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     strategy:
       # Don't kill the other matrix cells when one fails; we want to see all
       # the failures at once for triage.
@@ -215,7 +225,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Pester
-        shell: ${{ matrix.shell }}
         run: |
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           # Pester 5.x has a substantially different syntax from 3/4. We
@@ -224,7 +233,6 @@ jobs:
           Install-Module -Name Pester -MinimumVersion 5.5.0 -Force -Scope CurrentUser
 
       - name: Run Pester
-        shell: ${{ matrix.shell }}
         run: |
           if (-not (Test-Path -Path ./tests)) {
               Write-Host 'No tests directory yet -- skipping.'
