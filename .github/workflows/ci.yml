@@ -98,9 +98,11 @@ jobs:
           #     in PR 7. Until then it is excluded because v1 has dozens of
           #     known violations that are intentionally out of scope until
           #     the rewrite cuts over.
-          # We use -Recurse and feed multiple paths; PSSA happily glob-matches.
-          # If no .ps1/.psm1/.psd1 files exist yet (this is true at PR 1 time)
-          # PSSA returns success with zero findings, which is what we want.
+          # We use -Recurse and feed each path in a loop; PSSA's -Path
+          # parameter is [string] (not [string[]]) so we iterate rather
+          # than splat an array. If no .ps1/.psm1/.psd1 files exist yet
+          # (this is true at PR 1 time) PSSA returns success with zero
+          # findings, which is what we want.
           $paths = @(
               './src/WamTrainingDisable'
               './tests'
@@ -113,10 +115,12 @@ jobs:
               return
           }
 
-          $findings = Invoke-ScriptAnalyzer `
-              -Path $paths `
-              -Recurse `
-              -Settings ./PSScriptAnalyzerSettings.psd1
+          $findings = foreach ($path in $paths) {
+              Invoke-ScriptAnalyzer `
+                  -Path $path `
+                  -Recurse `
+                  -Settings ./PSScriptAnalyzerSettings.psd1
+          }
 
           if ($findings) {
               $findings | Format-Table -AutoSize | Out-String | Write-Host
