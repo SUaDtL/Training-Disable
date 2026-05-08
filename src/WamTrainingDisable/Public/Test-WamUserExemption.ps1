@@ -5,14 +5,38 @@
 # policy, returns a decision object: is the user exempt, why, and which
 # log channels should receive a line for this decision.
 #
-# The "pure function" framing is the key v2 lesson over v1. v1 had the
-# exemption ladder inlined in WAM-ADSearch's foreach loop, mixed with the
-# log-write side effects. There was no way to test the matrix without
-# spinning up AD and the logger. v2 separates the decision from the
-# action so the matrix becomes a Pester table.
+# v2 vs. v1 behavior matrix
+# -------------------------
+# v1 had the exemption ladder inlined in WAM-ADSearch's foreach loop,
+# mixed with the log-write side effects, with three boolean toggles
+# ($VIP, $REL, $SCO) controlling individual OU exemptions. v2 collapses
+# the toggles into a single Policy.ExemptOus array and separates the
+# decision (this function) from the action (Write-WamLog, called by
+# the orchestrator on the channels this function returns).
 #
-# At PR 3 this is a stub. PR 4 fills in the body and the table-driven
-# tests.
+# The decision precedence order is preserved verbatim from v1:
+#
+#   1. Account is already disabled         -> exempt, Main only
+#   2. Account is within grace period      -> exempt, Main + Exempt
+#   3. Account's DN matches an ExemptOu    -> exempt, Main + Exempt
+#   4. Account is in an ExemptGroup        -> exempt, Main + Exempt
+#   5. Otherwise                           -> not exempt, Main
+#
+# VIP-channel routing is INDEPENDENT of the decision: if the user's DN
+# matches the configured VipDistinguishedNamePattern, 'Vip' is added to
+# the Channels list regardless of which precedence branch fired. This
+# fixes the v1 inconsistency where the disable path used the suffix
+# match '*VIP' and the exemption path used the substring match
+# '*OU=VIP*' -- the same user could route differently between runs
+# depending on which branch fired. v2 settles on one matcher and
+# applies it once.
+#
+# Reason-string compatibility
+# ---------------------------
+# The Reason strings emitted here are a drop-in contract: the snapshot
+# fixtures captured in PR 2 pin them verbatim. Changing any of them
+# requires updating the fixture in the same PR with a note explaining
+# why.
 # =============================================================================
 
 function Test-WamUserExemption {
@@ -138,7 +162,121 @@ function Test-WamUserExemption {
         [datetime] $WorkingDate = [datetime]::Now
     )
 
-    throw [System.NotImplementedException]::new(
-        'Test-WamUserExemption will be implemented in PR 4 (pure logic extraction).'
-    )
+    # -------------------------------------------------------------------------
+    # VIP routing is computed up-front and applied to every decision
+    # branch. This is the unification fix for v1's defect 6.
+    # -------------------------------------------------------------------------
+    $isVipTagged = $UserRecord.DistinguishedName -like $VipDistinguishedNamePattern
+
+    # -------------------------------------------------------------------------
+    # Branch 1: account is already disabled.
+    # -------------------------------------------------------------------------
+    # v1 logs only to Main here ("Account is already disabled."). It does
+    # NOT log to the Exempt channel because the user is not really
+    # "exempt" -- they were just already done. We preserve that behavior.
+    # -------------------------------------------------------------------------
+    if (-not $UserRecord.Enabled) {
+        $channels = @('Main')
+        if ($isVipTagged) {
+            $channels += 'Vip'
+        }
+        return [pscustomobject] @{
+            IsExempt = $true
+            Reason   = 'Account is already disabled.'
+            Channels = $channels
+        }
+    }
+
+    # -------------------------------------------------------------------------
+    # Branch 2: within grace period.
+    # -------------------------------------------------------------------------
+    # v1: "if ($ADAccount.whenCreated.AddDays($GracePeriod) -lt (get-date))"
+    # The condition is "true means past grace, proceed to disable check."
+    # The else (which is what we want here) means "still within grace."
+    # We invert: $whenCreated.AddDays(GracePeriod) -ge $WorkingDate is
+    # "still within grace."
+    #
+    # The {0} in the message is the GracePeriodDays value, formatted via
+    # PowerShell's -f operator. v1's message inlined "$GracePeriod"
+    # (which was 30 by default); v2 mirrors that by interpolating the
+    # configured value, so a custom GracePeriodDays surfaces in the log.
+    # -------------------------------------------------------------------------
+    $graceThreshold = $UserRecord.whenCreated.AddDays($Policy.GracePeriodDays)
+    if ($graceThreshold -ge $WorkingDate) {
+        $channels = @('Main', 'Exempt')
+        if ($isVipTagged) {
+            $channels += 'Vip'
+        }
+        return [pscustomobject] @{
+            IsExempt = $true
+            Reason   = "Account is less than $($Policy.GracePeriodDays) days old."
+            Channels = $channels
+        }
+    }
+
+    # -------------------------------------------------------------------------
+    # Branch 3: in an exempt OU.
+    # -------------------------------------------------------------------------
+    # We iterate ExemptOus in array order; the FIRST match wins. The
+    # OuMatchPattern uses a -f-style placeholder ({0}) which we fill in
+    # per OU. Default pattern is '*OU={0}*' (the substring matcher v2
+    # standardizes on). The matched OU name is interpolated into the
+    # log message so the VIP/REL/SCO/etc. distinction surfaces.
+    # -------------------------------------------------------------------------
+    foreach ($exemptOu in $Policy.ExemptOus) {
+        $pattern = $Policy.OuMatchPattern -f $exemptOu
+        if ($UserRecord.DistinguishedName -like $pattern) {
+            $channels = @('Main', 'Exempt')
+            if ($isVipTagged) {
+                $channels += 'Vip'
+            }
+            return [pscustomobject] @{
+                IsExempt = $true
+                Reason   = "$exemptOu Users are currently exempt from WAM Training."
+                Channels = $channels
+            }
+        }
+    }
+
+    # -------------------------------------------------------------------------
+    # Branch 4: in an exempt group.
+    # -------------------------------------------------------------------------
+    # v1 used "-match" (regex partial) which had surprising behavior on
+    # group names that happened to contain regex metacharacters. v2 uses
+    # equality with case-insensitive comparison, which is the unsurprising
+    # behavior. The user's MemberOf is expected to be display names
+    # (already resolved by Get-WamUserDetail), not DNs.
+    # -------------------------------------------------------------------------
+    foreach ($groupName in $UserRecord.MemberOf) {
+        foreach ($exemptGroup in $Policy.ExemptGroups) {
+            if ($groupName -ieq $exemptGroup) {
+                $channels = @('Main', 'Exempt')
+                if ($isVipTagged) {
+                    $channels += 'Vip'
+                }
+                return [pscustomobject] @{
+                    IsExempt = $true
+                    Reason   = 'User is a member of an exemption group in AD.'
+                    Channels = $channels
+                }
+            }
+        }
+    }
+
+    # -------------------------------------------------------------------------
+    # Branch 5: not exempt -- disable the account.
+    # -------------------------------------------------------------------------
+    # The Reason here ("Account Disabled.") is what v1 wrote to the log
+    # in the WAM-Disable success branch. The orchestrator emits this on
+    # the Main channel (and the Vip channel if the user is VIP-tagged).
+    # -------------------------------------------------------------------------
+    $channels = @('Main')
+    if ($isVipTagged) {
+        $channels += 'Vip'
+    }
+    return [pscustomobject] @{
+        IsExempt = $false
+        Reason   = 'Account Disabled.'
+        Channels = $channels
+    }
 }
