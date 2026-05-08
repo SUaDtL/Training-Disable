@@ -1,0 +1,71 @@
+# =============================================================================
+# .editorconfig -- WAM Training Disable
+# =============================================================================
+#
+# Purpose:
+#   Tells editors (VS Code, the PowerShell ISE, Notepad++, JetBrains, vim/emacs
+#   with the editorconfig plugin, etc.) how to handle whitespace and line
+#   endings consistently. Without this, a contributor on Windows opening a file
+#   created on Linux can silently flip CRLF<->LF on every save, which produces
+#   diff noise that obscures real changes.
+#
+# Why we care:
+#   PowerShell's parser does not care about line endings, but `git diff`,
+#   PSScriptAnalyzer's whitespace rules, and code reviewers all do. Pinning
+#   line ending and indentation in one file means we never argue about it.
+#
+# This file is honored automatically by VS Code and most editors. No plugin is
+# needed for VS Code; for vim/emacs install the editorconfig plugin once.
+# =============================================================================
+
+# This is the top-most editorconfig in the tree -- the editor stops walking
+# up the directory hierarchy here. Required boilerplate.
+root = true
+
+
+# -----------------------------------------------------------------------------
+# Default for ALL files
+# -----------------------------------------------------------------------------
+# UTF-8 without BOM matches what Git, GitHub, and PowerShell 7 all assume.
+# (Windows PowerShell 5.1 will read UTF-8 without BOM correctly when files are
+# loaded as scripts; the BOM-less form is what `git diff` shows cleanly.)
+#
+# LF line endings are the source-of-truth in the repo. Windows checkouts can
+# convert to CRLF transparently via core.autocrlf=true in the developer's
+# global git config; the file on disk in git is always LF.
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+
+# -----------------------------------------------------------------------------
+# PowerShell source files
+# -----------------------------------------------------------------------------
+# Four-space indents are the PowerShell-team convention (matches the style used
+# by the PSReadLine, Pester, and PSScriptAnalyzer codebases). This is what
+# PSScriptAnalyzer's PSUseConsistentIndentation rule expects.
+[*.{ps1,psm1,psd1}]
+indent_size = 4
+
+
+# -----------------------------------------------------------------------------
+# Markdown
+# -----------------------------------------------------------------------------
+# Trailing spaces in Markdown are sometimes meaningful (two trailing spaces ==
+# explicit line break). We disable trim for .md files so a deliberate line
+# break is not silently eaten by an editor save.
+[*.md]
+trim_trailing_whitespace = false
+
+
+# -----------------------------------------------------------------------------
+# YAML (CI workflows, dependabot, issue templates)
+# -----------------------------------------------------------------------------
+# YAML is whitespace-significant. Two-space indents are the GitHub Actions and
+# dependabot convention, and most YAML linters complain about four.
+[*.{yml,yaml}]
+indent_size = 2

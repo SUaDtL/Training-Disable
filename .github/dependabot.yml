@@ -1,0 +1,45 @@
+# =============================================================================
+# .github/dependabot.yml -- WAM Training Disable
+# =============================================================================
+#
+# What this does:
+#   Tells GitHub's Dependabot to scan the repository for outdated dependencies
+#   and open pull requests when newer versions are available.
+#
+# What we have to scan:
+#   - GitHub Actions versions in .github/workflows/. These are the
+#     `uses: actions/checkout@v4` lines. When v5 ships, Dependabot opens a
+#     PR. Without this we silently rot.
+#   - PowerShell modules: Dependabot does NOT support PowerShellGallery as
+#     an ecosystem (yet). We track Pester / PSScriptAnalyzer minimum versions
+#     manually in the workflow files; no automation here.
+#
+# Schedule:
+#   Weekly on Mondays. Daily would generate too much PR noise on a small
+#   project; monthly would let security patches sit too long.
+# =============================================================================
+
+version: 2
+updates:
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: "America/New_York"
+    commit-message:
+      # Conventional Commits style; matches what the rest of the repo's
+      # commit messages use.
+      prefix: chore(deps)
+      include: scope
+    labels:
+      - dependencies
+      - github-actions
+    # Cap the open PR count. If five Dependabot PRs sit open simultaneously
+    # that's a signal we need to triage, not a signal to keep opening more.
+    open-pull-requests-limit: 5

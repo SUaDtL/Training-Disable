@@ -1,0 +1,280 @@
+# =============================================================================
+# .github/workflows/ci.yml -- WAM Training Disable
+# =============================================================================
+#
+# What this workflow does:
+#   Runs three jobs in parallel on every push and pull request:
+#
+#     1. analyze   -- PSScriptAnalyzer + a vendor-reference grep gate. This
+#                     is the cheapest job and gates everything else: if lint
+#                     fails or a banned string slipped in, we want to know
+#                     before paying for the test matrix.
+#     2. test      -- Pester 5 across a 3-cell matrix:
+#                       (a) Windows + Windows PowerShell 5.1   (prod runtime)
+#                       (b) Windows + pwsh 7.x                 (modern Windows)
+#                       (c) Ubuntu  + pwsh 7.x                 (cross-platform)
+#                     The first row is the most important: it's what the prod
+#                     scheduled task actually runs on.
+#     3. manifest  -- Test-ModuleManifest sanity check on the .psd1.
+#
+# Why this is in PR 1 even though there's nothing to test yet:
+#   The skeleton is the gate. Once it lands, every subsequent PR has to pass
+#   lint and the vendor-reference grep before it can merge -- including the
+#   PRs that bring real code online. That sequencing prevents a "we'll add CI
+#   later" backslide.
+#
+# Free-tier note:
+#   The user is on a personal GitHub account with a public repo. Public repos
+#   get unlimited Actions minutes including Windows runners (which normally
+#   burn 2x the minutes of Linux). This workflow uses both Windows and Linux
+#   freely; if the repo ever goes private, revisit the matrix.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      # Match the harness-mandated working branch and any future feature
+      # branches under feature/ or fix/.
+      - 'claude/**'
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+  # Allow manual triggers for debugging.
+  workflow_dispatch:
+
+# Cancel a previous run on the same ref when a new push lands. Saves minutes
+# and keeps the Actions tab tidy. The default behavior is to run them in
+# parallel, which is wasteful for an iterating developer.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# We deliberately set least-privilege at the workflow level. The default
+# token has more permissions than we need; restrict to read-only contents.
+# If we later add an action that posts back to the PR (test reporter), bump
+# checks: write at the job level, not here.
+permissions:
+  contents: read
+
+jobs:
+
+  # -----------------------------------------------------------------------
+  # analyze: PSScriptAnalyzer + vendor-reference grep gate
+  # -----------------------------------------------------------------------
+  # Linux runner because (a) it's cheaper, (b) PSScriptAnalyzer runs fine on
+  # pwsh-on-Linux, and (c) the rules we care about (alias ban, positional
+  # ban, compat checks) are platform-independent.
+  # -----------------------------------------------------------------------
+  analyze:
+    name: Lint and vendor-reference gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          # We pin a minimum version because the compat rules are still
+          # being iterated on; older versions miss target profiles we want.
+          # Set-PSRepository sets PSGallery to Trusted so Install-Module
+          # doesn't prompt -- non-interactive shells need this.
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name PSScriptAnalyzer -MinimumVersion 1.21.0 -Force -Scope CurrentUser
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          # Scope of the scan:
+          #   - The v2 module under src/WamTrainingDisable
+          #   - The Pester tests under tests/
+          #   - The drop-in shim src/TrainingDisable.ps1 once it is rewritten
+          #     in PR 7. Until then it is excluded because v1 has dozens of
+          #     known violations that are intentionally out of scope until
+          #     the rewrite cuts over.
+          # We use -Recurse and feed multiple paths; PSSA happily glob-matches.
+          # If no .ps1/.psm1/.psd1 files exist yet (this is true at PR 1 time)
+          # PSSA returns success with zero findings, which is what we want.
+          $paths = @(
+              './src/WamTrainingDisable'
+              './tests'
+              './PSScriptAnalyzerSettings.psd1'
+              './WamTrainingDisable.config.psd1'
+          ) | Where-Object { Test-Path -Path $_ }
+
+          if (-not $paths) {
+              Write-Host 'No analyzable PowerShell sources yet -- skipping.'
+              return
+          }
+
+          $findings = Invoke-ScriptAnalyzer `
+              -Path $paths `
+              -Recurse `
+              -Settings ./PSScriptAnalyzerSettings.psd1
+
+          if ($findings) {
+              $findings | Format-Table -AutoSize | Out-String | Write-Host
+              throw "$($findings.Count) PSScriptAnalyzer finding(s); failing."
+          }
+
+          Write-Host 'PSScriptAnalyzer: clean.'
+
+      - name: Vendor-reference gate (working tree)
+        shell: bash
+        run: |
+          # Grep tracked files for any of the prohibited assistant-vendor
+          # strings. The maintainer's customer would have an allergic
+          # reaction to those names appearing in the public repo; this
+          # gate catches slips before they leak.
+          #
+          # IMPLEMENTATION NOTES:
+          #   1. We exclude this workflow file from the scan because the
+          #      regex itself necessarily contains the literal strings we
+          #      are banning everywhere else. Excluding the gate from its
+          #      own scan is the cleanest way to avoid the bootstrap
+          #      paradox without obfuscating the regex.
+          #   2. We also exclude tests/fixtures/ -- v1 captured output
+          #      that may contain organization-specific strings, and the
+          #      DropInCompat snapshot test depends on it being verbatim.
+          #      No vendor names are expected there, but if any slip in
+          #      via fixture data they are not vendor leaks of OUR code.
+          #   3. The harness-mandated working branch name is the substring
+          #      that would otherwise match; we permit it explicitly.
+          #
+          # The regex tokens are assembled from fragments so this script
+          # itself does not need to be in the exclusion list of any other
+          # tooling (e.g. a future linter that scans shell scripts).
+          set -euo pipefail
+
+          # Build the banned regex from fragments so the literal vendor
+          # names appear ONLY at runtime as a concatenation, not as a
+          # source-level substring of any file other than this one.
+          frag_a='cla'
+          frag_b='ude'
+          frag_c='anthr'
+          frag_d='opic'
+          banned="(?i)(${frag_a}${frag_b}|${frag_c}${frag_d})"
+
+          # The allowlist regex matches lines that contain ONLY the
+          # harness-mandated branch path -- a known legitimate occurrence
+          # of one of the fragments.
+          allow_line="${frag_a}${frag_b}/init-project-setup-s2ajg"
+
+          # File-level exclusions: paths that may legitimately contain the
+          # banned strings (the workflow file itself, fixture data).
+          excluded_files='^(\.github/workflows/ci\.yml|tests/fixtures/)'
+
+          findings=$(git ls-files \
+              | grep -Pv "$excluded_files" \
+              | xargs -d '\n' grep -PIn "$banned" 2>/dev/null \
+              | grep -Pv "$allow_line" \
+              || true)
+
+          if [ -n "$findings" ]; then
+              echo "Vendor-reference gate FAILED. The following hits must be removed or allow-listed:"
+              echo "$findings"
+              exit 1
+          fi
+
+          echo 'Vendor-reference gate: clean.'
+
+  # -----------------------------------------------------------------------
+  # test: Pester 5 across the runtime matrix
+  # -----------------------------------------------------------------------
+  # Job is a no-op until tests exist (PR 2 onwards). We still wire the matrix
+  # in PR 1 so the structure is reviewed and locked early; an empty test run
+  # passes Pester with zero failures.
+  # -----------------------------------------------------------------------
+  test:
+    name: Test (${{ matrix.os }} / ${{ matrix.shell }})
+    needs: analyze
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      # Don't kill the other matrix cells when one fails; we want to see all
+      # the failures at once for triage.
+      fail-fast: false
+      matrix:
+        include:
+          # Production parity: this is the cell that *must* be green for the
+          # ops team to feel safe deploying. Everything else is gravy.
+          - os: windows-latest
+            shell: powershell      # Windows PowerShell 5.1
+          - os: windows-latest
+            shell: pwsh             # PowerShell 7.x on Windows
+          - os: ubuntu-latest
+            shell: pwsh             # PowerShell 7.x on Linux
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Install Pester
+        shell: ${{ matrix.shell }}
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          # Pester 5.x has a substantially different syntax from 3/4. We
+          # require 5.5+ because that's where -ForEach on Describe became
+          # stable, which we lean on for the exemption-matrix tests.
+          Install-Module -Name Pester -MinimumVersion 5.5.0 -Force -Scope CurrentUser
+
+      - name: Run Pester
+        shell: ${{ matrix.shell }}
+        run: |
+          if (-not (Test-Path -Path ./tests)) {
+              Write-Host 'No tests directory yet -- skipping.'
+              return
+          }
+
+          # Configuration is hoisted into a separate .psd1 so the same
+          # settings apply locally and in CI. See tests/PesterConfiguration.psd1
+          # once it lands.
+          $configPath = './tests/PesterConfiguration.psd1'
+          if (Test-Path -Path $configPath) {
+              $config = New-PesterConfiguration -Hashtable (Import-PowerShellDataFile -Path $configPath)
+          }
+          else {
+              $config = New-PesterConfiguration
+              $config.Run.Path = './tests'
+              $config.Run.Throw = $true
+          }
+
+          Invoke-Pester -Configuration $config
+
+      - name: Upload test results
+        if: always() && hashFiles('TestResults*.xml') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.shell }}
+          path: TestResults*.xml
+
+  # -----------------------------------------------------------------------
+  # manifest: Test-ModuleManifest
+  # -----------------------------------------------------------------------
+  # Catches a malformed .psd1 (missing required key, syntax error, etc.)
+  # before the module fails to import on a developer's machine. No-op
+  # until the manifest exists in PR 3.
+  # -----------------------------------------------------------------------
+  manifest:
+    name: Module manifest sanity
+    needs: analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Test-ModuleManifest
+        shell: pwsh
+        run: |
+          $manifestPath = './src/WamTrainingDisable/WamTrainingDisable.psd1'
+          if (-not (Test-Path -Path $manifestPath)) {
+              Write-Host "Manifest does not exist yet at $manifestPath -- skipping."
+              return
+          }
+          Test-ModuleManifest -Path $manifestPath
