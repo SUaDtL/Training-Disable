@@ -199,6 +199,13 @@ Describe 'Write-WamLog' {
             # passing $WorkingDate so the {0:yyyyMMdd} placeholder expands.
             # This test validates that Add-WamLogContent receives a path with
             # the date correctly expanded.
+            #
+            # We match with a regex that accepts either separator at the
+            # join because Join-Path uses the platform-native separator
+            # ('/' on Linux, '\' on Windows) when combining the directory
+            # template (which contains forward slashes) with the file name.
+            # The date being a real path component -- not just a substring
+            # of the file name -- is what this test cares about.
             InModuleScope -ModuleName 'WamTrainingDisable' -ScriptBlock {
                 Write-WamLog `
                     -Message 'msg' `
@@ -206,7 +213,7 @@ Describe 'Write-WamLog' {
                     -LoggingConfig $script:DefaultLoggingConfig `
                     -WorkingDate $script:WorkingDate
                 Should -Invoke -CommandName Add-WamLogContent -Times 1 -ParameterFilter {
-                    $Path -like '/tmp/wam-test/Script_Output/WAM/20260508/*'
+                    $Path -match '/tmp/wam-test/Script_Output/WAM/20260508[\\/]'
                 }
             }
         }
